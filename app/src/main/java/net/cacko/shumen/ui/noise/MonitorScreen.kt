@@ -54,149 +54,154 @@ fun MonitorScreen(
         label = "AlertColor"
     )
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        // Dynamic background glow/overlay
-        val animatedAlpha by animateFloatAsState(
-            targetValue = if (currentDb > threshold) 0.15f else 0f,
-            label = "OverlayAlpha"
-        )
-        
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(alertColor.copy(alpha = animatedAlpha))
-        )
-
-        Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 64.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // Left Half: Meter
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            // Dynamic background glow/overlay
+            val animatedAlpha by animateFloatAsState(
+                targetValue = if (currentDb > threshold) 0.15f else 0f,
+                label = "OverlayAlpha"
+            )
+            
             Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.Center
-            ) {
-                LinearDbMeter(
-                    db = currentDb.toFloat(),
-                    threshold = threshold.toFloat(),
-                    modifier = Modifier
-                        .width(120.dp)
-                        .fillMaxHeight(0.7f)
-                )
-            }
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(alertColor.copy(alpha = animatedAlpha))
+            )
 
-            // Right Half: Info
-            Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.Center
+            Row(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 64.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                // Left Half: Meter
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            text = "${currentDb.toInt()}",
-                            style = MaterialTheme.typography.displayLarge.copy(
-                                fontWeight = FontWeight.Black,
-                                fontSize = 120.sp
-                            ),
-                            color = alertColor,
-                            modifier = Modifier.width(200.dp),
-                            textAlign = TextAlign.End
-                        )
-                        Text(
-                            text = "dB",
-                            style = MaterialTheme.typography.headlineLarge,
-                            modifier = Modifier.padding(bottom = 24.dp, start = 8.dp),
-                            color = alertColor.copy(alpha = 0.7f)
-                        )
-                    }
+                    LinearDbMeter(
+                        db = currentDb.toFloat(),
+                        threshold = threshold.toFloat(),
+                        modifier = Modifier
+                            .width(120.dp)
+                            .fillMaxHeight(0.7f)
+                    )
+                }
 
-                    AnimatedVisibility(
-                        visible = currentDb > threshold,
-                        enter = fadeIn() + expandVertically(),
-                        exit = fadeOut() + shrinkVertically()
+                // Right Half: Info
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.errorContainer,
-                            shape = RoundedCornerShape(16.dp),
-                            modifier = Modifier.padding(top = 16.dp)
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(
+                                text = "${currentDb.toInt()}",
+                                style = MaterialTheme.typography.displayLarge.copy(
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 120.sp
+                                ),
+                                color = alertColor,
+                                modifier = Modifier.width(200.dp),
+                                textAlign = TextAlign.End
+                            )
+                            Text(
+                                text = "dB",
+                                style = MaterialTheme.typography.headlineLarge,
+                                modifier = Modifier.padding(bottom = 24.dp, start = 8.dp),
+                                color = alertColor.copy(alpha = 0.7f)
+                            )
+                        }
+
+                        AnimatedVisibility(
+                            visible = currentDb > threshold,
+                            enter = fadeIn() + expandVertically(),
+                            exit = fadeOut() + shrinkVertically()
                         ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                            Surface(
+                                color = MaterialTheme.colorScheme.errorContainer,
+                                shape = RoundedCornerShape(16.dp),
+                                modifier = Modifier.padding(top = 16.dp)
                             ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Rounded.VolumeOff,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onErrorContainer
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Text(
-                                    text = "NOISE LIMIT EXCEEDED",
-                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onErrorContainer
-                                )
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Rounded.VolumeOff,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                        text = "NOISE LIMIT EXCEEDED",
+                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
-        }
 
-        // Quiet Mode Overlay
-        AnimatedVisibility(
-            visible = isQuietModeActive,
-            enter = fadeIn(tween(1000)),
-            exit = fadeOut(tween(1000))
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.85f)),
-                contentAlignment = Alignment.Center
+            // Quiet Mode Overlay
+            AnimatedVisibility(
+                visible = isQuietModeActive,
+                enter = fadeIn(tween(1000)),
+                exit = fadeOut(tween(1000))
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        imageVector = Icons.Rounded.GraphicEq,
-                        contentDescription = null,
-                        modifier = Modifier.size(120.dp),
-                        tint = Color.Yellow
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Text(
-                        text = "QUIET PLEASE",
-                        style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.ExtraBold),
-                        color = Color.Yellow
-                    )
-                    Text(
-                        text = "Ambient noise is disrupting the experience",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = Color.White.copy(alpha = 0.7f)
-                    )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.85f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Rounded.GraphicEq,
+                            contentDescription = null,
+                            modifier = Modifier.size(120.dp),
+                            tint = Color.Yellow
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
+                            text = "QUIET PLEASE",
+                            style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.ExtraBold),
+                            color = Color.Yellow
+                        )
+                        Text(
+                            text = "Ambient noise is disrupting the experience",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Color.White.copy(alpha = 0.7f)
+                        )
+                    }
                 }
             }
-        }
 
-        // Settings Button - Optimized for TV Focus
-        var isFabFocused by remember { mutableStateOf(false) }
-        
-        FloatingActionButton(
-            onClick = onSettingsClick,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(48.dp)
-                .onFocusChanged { isFabFocused = it.isFocused }
-                .focusable(),
-            containerColor = if (isFabFocused) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = if (isFabFocused) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSecondaryContainer
-        ) {
-            Icon(
-                Icons.Rounded.Settings, 
-                contentDescription = "Settings",
-                modifier = Modifier.size(if (isFabFocused) 32.dp else 24.dp)
-            )
+            // Settings Button - Optimized for TV Focus
+            var isFabFocused by remember { mutableStateOf(false) }
+            
+            FloatingActionButton(
+                onClick = onSettingsClick,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(48.dp)
+                    .onFocusChanged { isFabFocused = it.isFocused }
+                    .focusable(),
+                containerColor = if (isFabFocused) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = if (isFabFocused) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSecondaryContainer
+            ) {
+                Icon(
+                    Icons.Rounded.Settings, 
+                    contentDescription = "Settings",
+                    modifier = Modifier.size(if (isFabFocused) 32.dp else 24.dp)
+                )
+            }
         }
     }
 }
