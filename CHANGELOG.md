@@ -2,6 +2,16 @@
 
 All notable changes to the Shumen app will be documented in this file.
 
+## [1.6] - 2024-05-28
+
+### Added
+- **Super Alarm System**: Layered dual `ToneGenerator` instances to create a piercing "industrial siren" effect. The alarm now uses multiple dissonant tones simultaneously for maximum audibility and urgency.
+
+## [1.5] - 2024-05-27
+
+### Added
+- **Configurable Alarm Duration**: Users can now set how long the audible and visual alarms last (1-10 seconds) via a new setting in the Settings screen.
+
 ## [1.4] - 2024-05-26
 
 ### Fixed

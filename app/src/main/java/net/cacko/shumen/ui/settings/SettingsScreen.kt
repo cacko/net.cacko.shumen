@@ -27,6 +27,7 @@ fun SettingsScreen(
 ) {
     val threshold by viewModel.threshold.collectAsStateWithLifecycle()
     val sensitivity by viewModel.sensitivity.collectAsStateWithLifecycle()
+    val alarmDuration by viewModel.alarmDuration.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
 
     Scaffold(
@@ -103,6 +104,63 @@ fun SettingsScreen(
                         .focusable(),
                     colors = SliderDefaults.colors(
                         thumbColor = if (isSliderFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                )
+            }
+
+            // Alarm Duration Setting - TV Optimized
+            Column {
+                Text(
+                    text = "Alarm Duration: ${alarmDuration.toInt()} seconds",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "Set how long the alarm and visual alert stay on screen. Use LEFT/RIGHT on your remote to adjust.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+
+                var isDurationSliderFocused by remember { mutableStateOf(false) }
+                var durationSliderValue by remember(alarmDuration) { mutableStateOf(alarmDuration.toFloat()) }
+
+                Slider(
+                    value = durationSliderValue,
+                    onValueChange = {
+                        durationSliderValue = it
+                        viewModel.setAlarmDuration(it.toDouble())
+                    },
+                    valueRange = 1f..10f,
+                    steps = 8,
+                    modifier = Modifier
+                        .onFocusChanged { isDurationSliderFocused = it.isFocused }
+                        .onKeyEvent { event ->
+                            if (event.type == KeyEventType.KeyDown) {
+                                when (event.key) {
+                                    Key.DirectionLeft -> {
+                                        val newValue = (durationSliderValue - 1f).coerceAtLeast(1f)
+                                        durationSliderValue = newValue
+                                        viewModel.setAlarmDuration(newValue.toDouble())
+                                        true
+                                    }
+                                    Key.DirectionRight -> {
+                                        val newValue = (durationSliderValue + 1f).coerceAtMost(10f)
+                                        durationSliderValue = newValue
+                                        viewModel.setAlarmDuration(newValue.toDouble())
+                                        true
+                                    }
+                                    else -> false
+                                }
+                            } else {
+                                false
+                            }
+                        }
+                        .focusable(),
+                    colors = SliderDefaults.colors(
+                        thumbColor = if (isDurationSliderFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                         activeTrackColor = MaterialTheme.colorScheme.primary,
                         inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
                     )

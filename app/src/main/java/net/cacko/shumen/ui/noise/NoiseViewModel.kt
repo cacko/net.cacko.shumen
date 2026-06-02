@@ -28,6 +28,9 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
     val sensitivity: StateFlow<Double> = repository.sensitivityFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.0)
 
+    val alarmDuration: StateFlow<Double> = repository.alarmDurationFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 3.0)
+
     private val _isQuietModeActive = MutableStateFlow(false)
     val isQuietModeActive: StateFlow<Boolean> = _isQuietModeActive.asStateFlow()
 
@@ -36,11 +39,13 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
 
     private var monitorJob: Job? = null
     private var quietModeStartTime: Long = 0
-    private var toneGenerator: ToneGenerator? = null
+    private var toneGenerator1: ToneGenerator? = null
+    private var toneGenerator2: ToneGenerator? = null
 
     init {
         try {
-            toneGenerator = ToneGenerator(AudioManager.STREAM_ALARM, 100)
+            toneGenerator1 = ToneGenerator(AudioManager.STREAM_ALARM, 100)
+            toneGenerator2 = ToneGenerator(AudioManager.STREAM_ALARM, 100)
         } catch (e: Exception) {
             e.printStackTrace()
         }
@@ -67,14 +72,40 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun triggerAlarm() {
         viewModelScope.launch {
+            // 1. Mark alarm as active and STOP monitoring IMMEDIATELY
             _isAlarmActive.value = true
             stopMonitoring()
             
-            // Play alarm sound
-            toneGenerator?.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 3000)
+            // 2. Reset the displayed dB to 0 to reflect that we aren't measuring during alarm
+            _currentDb.value = 0.0
             
-            delay(3000)
+            val totalDurationMs = (alarmDuration.value * 1000).toLong()
+            val startTime = System.currentTimeMillis()
             
+            // 3. Play sound (after monitoring is confirmed stopped)
+            // Layering multiple dissonant tones for a "Super Alarm" industrial siren effect
+            var toggle = false
+            while (System.currentTimeMillis() - startTime < totalDurationMs && _isAlarmActive.value) {
+                val remaining = totalDurationMs - (System.currentTimeMillis() - startTime)
+                if (remaining > 0) {
+                    val toneA = if (toggle) ToneGenerator.TONE_CDMA_EMERGENCY_RINGBACK else ToneGenerator.TONE_SUP_ERROR
+                    val toneB = if (toggle) ToneGenerator.TONE_DTMF_D else ToneGenerator.TONE_CDMA_HIGH_L
+                    
+                    toneGenerator1?.startTone(toneA, remaining.toInt())
+                    toneGenerator2?.startTone(toneB, remaining.toInt())
+                }
+                toggle = !toggle
+                delay(1000)
+            }
+            
+            // 4. Clean up sound
+            toneGenerator1?.stopTone()
+            toneGenerator2?.stopTone()
+            
+            // 5. Short "Cool Down" delay to let any echo/residual sound clear
+            delay(500)
+            
+            // 6. Reset state and RESUME monitoring
             _isAlarmActive.value = false
             startMonitoring()
         }
@@ -105,6 +136,12 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun setAlarmDuration(value: Double) {
+        viewModelScope.launch {
+            repository.saveAlarmDuration(value)
+        }
+    }
+
     fun stopMonitoring() {
         monitorJob?.cancel()
         _isMonitoring.value = false
@@ -114,6 +151,7 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
         super.onCleared()
         stopMonitoring()
-        toneGenerator?.release()
+        toneGenerator1?.release()
+        toneGenerator2?.release()
     }
 }

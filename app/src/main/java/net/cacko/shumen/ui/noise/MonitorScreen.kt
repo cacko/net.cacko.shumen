@@ -4,6 +4,7 @@ import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -163,7 +165,8 @@ fun MonitorScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Red.copy(alpha = 0.4f)),
+                        .background(Color.Red.copy(alpha = 0.4f))
+                        .clickable { onSettingsClick() }, // Quick access via remote CLICK
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -194,7 +197,7 @@ fun MonitorScreen(
                             color = Color.White
                         )
                         Text(
-                            text = "Reducing sensitivity recommended",
+                            text = "The room is too loud! Please lower your noise.",
                             style = MaterialTheme.typography.headlineSmall,
                             color = Color.White.copy(alpha = 0.8f)
                         )
@@ -244,6 +247,7 @@ fun MonitorScreen(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(48.dp)
+                    .zIndex(10f) // Keep above all overlays
                     .onFocusChanged { isFabFocused = it.isFocused }
                     .focusable(),
                 containerColor = if (isFabFocused) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.secondaryContainer,
