@@ -1,9 +1,12 @@
 package net.cacko.shumen.ui.noise
 
 import android.app.Application
+import android.media.AudioManager
+import android.media.ToneGenerator
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import net.cacko.shumen.audio.AudioAnalyzer
@@ -28,20 +31,52 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
     private val _isQuietModeActive = MutableStateFlow(false)
     val isQuietModeActive: StateFlow<Boolean> = _isQuietModeActive.asStateFlow()
 
+    private val _isAlarmActive = MutableStateFlow(false)
+    val isAlarmActive: StateFlow<Boolean> = _isAlarmActive.asStateFlow()
+
     private var monitorJob: Job? = null
     private var quietModeStartTime: Long = 0
+    private var toneGenerator: ToneGenerator? = null
+
+    init {
+        try {
+            toneGenerator = ToneGenerator(AudioManager.STREAM_ALARM, 100)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     fun startMonitoring() {
-        if (_isMonitoring.value) return
+        if (_isMonitoring.value || _isAlarmActive.value) return
         
         monitorJob = viewModelScope.launch {
             _isMonitoring.value = true
             audioAnalyzer.startMonitoring().collect { db ->
-                // Apply sensitivity multiplier if needed
-                val adjustedDb = db * sensitivity.value
-                _currentDb.value = adjustedDb
-                checkQuietMode(adjustedDb)
+                if (!_isAlarmActive.value) {
+                    val adjustedDb = db * sensitivity.value
+                    _currentDb.value = adjustedDb
+                    checkQuietMode(adjustedDb)
+                    
+                    if (adjustedDb > threshold.value) {
+                        triggerAlarm()
+                    }
+                }
             }
+        }
+    }
+
+    private fun triggerAlarm() {
+        viewModelScope.launch {
+            _isAlarmActive.value = true
+            stopMonitoring()
+            
+            // Play alarm sound
+            toneGenerator?.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 3000)
+            
+            delay(3000)
+            
+            _isAlarmActive.value = false
+            startMonitoring()
         }
     }
 
@@ -79,5 +114,6 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
     override fun onCleared() {
         super.onCleared()
         stopMonitoring()
+        toneGenerator?.release()
     }
 }

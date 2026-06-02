@@ -1,5 +1,6 @@
 package net.cacko.shumen.ui.settings
 
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectableGroup
@@ -11,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -49,31 +51,60 @@ fun SettingsScreen(
         ) {
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Threshold Setting - TV Optimized
+            // Alert Level Setting - TV Optimized
             Column {
                 Text(
-                    text = "Noise Threshold: ${threshold.toInt()} dB",
+                    text = "Alert Level (dB): ${threshold.toInt()} dB",
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Adjust the decibel level that triggers alerts.",
+                    text = "Set the decibel level that triggers the alarm and visual alerts. Use LEFT/RIGHT on your remote to adjust.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 
                 var isSliderFocused by remember { mutableStateOf(false) }
+                // Use local state for immediate visual feedback during adjustment
+                var sliderValue by remember(threshold) { mutableStateOf(threshold.toFloat()) }
+                
                 Slider(
-                    value = threshold.toFloat(),
-                    onValueChange = { viewModel.setThreshold(it.toDouble()) },
+                    value = sliderValue,
+                    onValueChange = { 
+                        sliderValue = it
+                        viewModel.setThreshold(it.toDouble()) 
+                    },
                     valueRange = 40f..100f,
-                    steps = 11,
+                    steps = 59,
                     modifier = Modifier
-                        .onFocusChanged { isSliderFocused = it.isFocused },
+                        .onFocusChanged { isSliderFocused = it.isFocused }
+                        .onKeyEvent { event ->
+                            if (event.type == KeyEventType.KeyDown) {
+                                when (event.key) {
+                                    Key.DirectionLeft -> {
+                                        val newValue = (sliderValue - 1f).coerceAtLeast(40f)
+                                        sliderValue = newValue
+                                        viewModel.setThreshold(newValue.toDouble())
+                                        true
+                                    }
+                                    Key.DirectionRight -> {
+                                        val newValue = (sliderValue + 1f).coerceAtMost(100f)
+                                        sliderValue = newValue
+                                        viewModel.setThreshold(newValue.toDouble())
+                                        true
+                                    }
+                                    else -> false
+                                }
+                            } else {
+                                false
+                            }
+                        }
+                        .focusable(),
                     colors = SliderDefaults.colors(
                         thumbColor = if (isSliderFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                        activeTrackColor = MaterialTheme.colorScheme.primary
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 )
             }

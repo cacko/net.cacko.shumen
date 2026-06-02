@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.VolumeOff
 import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,6 +21,8 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -39,6 +42,7 @@ fun MonitorScreen(
     val currentDb by viewModel.currentDb.collectAsStateWithLifecycle()
     val threshold by viewModel.threshold.collectAsStateWithLifecycle()
     val isQuietModeActive by viewModel.isQuietModeActive.collectAsStateWithLifecycle()
+    val isAlarmActive by viewModel.isAlarmActive.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         viewModel.startMonitoring()
@@ -46,6 +50,7 @@ fun MonitorScreen(
 
     val alertColor by animateColorAsState(
         targetValue = when {
+            isAlarmActive -> Color.Red
             currentDb > threshold + 15 -> Color.Red
             currentDb > threshold -> Color.Yellow
             else -> MaterialTheme.colorScheme.primary
@@ -61,7 +66,7 @@ fun MonitorScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             // Dynamic background glow/overlay
             val animatedAlpha by animateFloatAsState(
-                targetValue = if (currentDb > threshold) 0.15f else 0f,
+                targetValue = if (currentDb > threshold || isAlarmActive) 0.15f else 0f,
                 label = "OverlayAlpha"
             )
             
@@ -81,7 +86,7 @@ fun MonitorScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     LinearDbMeter(
-                        db = currentDb.toFloat(),
+                        db = if (isAlarmActive) 100f else currentDb.toFloat(),
                         threshold = threshold.toFloat(),
                         modifier = Modifier
                             .width(120.dp)
@@ -118,7 +123,7 @@ fun MonitorScreen(
                         }
 
                         AnimatedVisibility(
-                            visible = currentDb > threshold,
+                            visible = currentDb > threshold || isAlarmActive,
                             enter = fadeIn() + expandVertically(),
                             exit = fadeOut() + shrinkVertically()
                         ) {
@@ -138,7 +143,7 @@ fun MonitorScreen(
                                     )
                                     Spacer(modifier = Modifier.width(12.dp))
                                     Text(
-                                        text = "NOISE LIMIT EXCEEDED",
+                                        text = if (isAlarmActive) "ALARM ACTIVE!" else "NOISE LIMIT EXCEEDED",
                                         style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                                         color = MaterialTheme.colorScheme.onErrorContainer
                                     )
@@ -149,9 +154,57 @@ fun MonitorScreen(
                 }
             }
 
+            // Alarm Overlay
+            AnimatedVisibility(
+                visible = isAlarmActive,
+                enter = fadeIn(tween(300)) + scaleIn(tween(300), initialScale = 0.8f),
+                exit = fadeOut(tween(300)) + scaleOut(tween(300), targetScale = 0.8f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Red.copy(alpha = 0.4f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        val infiniteTransition = rememberInfiniteTransition(label = "AlarmScale")
+                        val scale by infiniteTransition.animateFloat(
+                            initialValue = 1f,
+                            targetValue = 1.2f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(500, easing = LinearEasing),
+                                repeatMode = RepeatMode.Reverse
+                            ),
+                            label = "IconScale"
+                        )
+                        
+                        Icon(
+                            imageVector = Icons.Rounded.NotificationsActive,
+                            contentDescription = null,
+                            modifier = Modifier.size(150.dp).graphicsLayer(scaleX = scale, scaleY = scale),
+                            tint = Color.White
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Text(
+                            text = "ALARM!",
+                            style = MaterialTheme.typography.displayLarge.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 100.sp
+                            ),
+                            color = Color.White
+                        )
+                        Text(
+                            text = "Reducing sensitivity recommended",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = Color.White.copy(alpha = 0.8f)
+                        )
+                    }
+                }
+            }
+
             // Quiet Mode Overlay
             AnimatedVisibility(
-                visible = isQuietModeActive,
+                visible = isQuietModeActive && !isAlarmActive,
                 enter = fadeIn(tween(1000)),
                 exit = fadeOut(tween(1000))
             ) {
@@ -258,13 +311,14 @@ fun LinearDbMeter(
                 )
             }
 
-            // Draw threshold marker
+            // Threshold marker
             val thresholdY = canvasHeight - (threshold / 100f) * canvasHeight
             drawLine(
                 color = Color.White,
                 start = Offset(-8.dp.toPx(), thresholdY),
                 end = Offset(canvasWidth + 8.dp.toPx(), thresholdY),
-                strokeWidth = 3.dp.toPx()
+                strokeWidth = 3.dp.toPx(),
+                cap = StrokeCap.Round
             )
         }
     }
