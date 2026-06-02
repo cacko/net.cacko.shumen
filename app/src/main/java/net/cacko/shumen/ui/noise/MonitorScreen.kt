@@ -1,0 +1,274 @@
+package net.cacko.shumen.ui.noise
+
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.VolumeOff
+import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import net.cacko.shumen.ui.theme.ShumenTheme
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MonitorScreen(
+    viewModel: NoiseViewModel = viewModel(),
+    onSettingsClick: () -> Unit = {}
+) {
+    val currentDb by viewModel.currentDb.collectAsStateWithLifecycle()
+    val threshold by viewModel.threshold.collectAsStateWithLifecycle()
+    val isQuietModeActive by viewModel.isQuietModeActive.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        viewModel.startMonitoring()
+    }
+
+    val alertColor by animateColorAsState(
+        targetValue = when {
+            currentDb > threshold + 15 -> Color.Red
+            currentDb > threshold -> Color.Yellow
+            else -> MaterialTheme.colorScheme.primary
+        },
+        animationSpec = tween(300),
+        label = "AlertColor"
+    )
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Dynamic background glow/overlay
+        val animatedAlpha by animateFloatAsState(
+            targetValue = if (currentDb > threshold) 0.15f else 0f,
+            label = "OverlayAlpha"
+        )
+        
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(alertColor.copy(alpha = animatedAlpha))
+        )
+
+        Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 64.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Left Half: Meter
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                LinearDbMeter(
+                    db = currentDb.toFloat(),
+                    threshold = threshold.toFloat(),
+                    modifier = Modifier
+                        .width(120.dp)
+                        .fillMaxHeight(0.7f)
+                )
+            }
+
+            // Right Half: Info
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            text = "${currentDb.toInt()}",
+                            style = MaterialTheme.typography.displayLarge.copy(
+                                fontWeight = FontWeight.Black,
+                                fontSize = 120.sp
+                            ),
+                            color = alertColor,
+                            modifier = Modifier.width(200.dp),
+                            textAlign = TextAlign.End
+                        )
+                        Text(
+                            text = "dB",
+                            style = MaterialTheme.typography.headlineLarge,
+                            modifier = Modifier.padding(bottom = 24.dp, start = 8.dp),
+                            color = alertColor.copy(alpha = 0.7f)
+                        )
+                    }
+
+                    AnimatedVisibility(
+                        visible = currentDb > threshold,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.errorContainer,
+                            shape = RoundedCornerShape(16.dp),
+                            modifier = Modifier.padding(top = 16.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Rounded.VolumeOff,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = "NOISE LIMIT EXCEEDED",
+                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                    color = MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Quiet Mode Overlay
+        AnimatedVisibility(
+            visible = isQuietModeActive,
+            enter = fadeIn(tween(1000)),
+            exit = fadeOut(tween(1000))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.85f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        imageVector = Icons.Rounded.GraphicEq,
+                        contentDescription = null,
+                        modifier = Modifier.size(120.dp),
+                        tint = Color.Yellow
+                    )
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Text(
+                        text = "QUIET PLEASE",
+                        style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.ExtraBold),
+                        color = Color.Yellow
+                    )
+                    Text(
+                        text = "Ambient noise is disrupting the experience",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.White.copy(alpha = 0.7f)
+                    )
+                }
+            }
+        }
+
+        // Settings Button - Optimized for TV Focus
+        var isFabFocused by remember { mutableStateOf(false) }
+        
+        FloatingActionButton(
+            onClick = onSettingsClick,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(48.dp)
+                .onFocusChanged { isFabFocused = it.isFocused }
+                .focusable(),
+            containerColor = if (isFabFocused) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = if (isFabFocused) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSecondaryContainer
+        ) {
+            Icon(
+                Icons.Rounded.Settings, 
+                contentDescription = "Settings",
+                modifier = Modifier.size(if (isFabFocused) 32.dp else 24.dp)
+            )
+        }
+    }
+}
+
+@Composable
+fun LinearDbMeter(
+    db: Float,
+    threshold: Float,
+    modifier: Modifier = Modifier
+) {
+    val animatedDb by animateFloatAsState(
+        targetValue = db,
+        animationSpec = spring(stiffness = Spring.StiffnessLow),
+        label = "DbAnimation"
+    )
+
+    val segmentCount = 20
+    val segmentGap = 4.dp
+
+    Box(modifier = modifier.background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(8.dp)).padding(8.dp)) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val canvasWidth = size.width
+            val canvasHeight = size.height
+            
+            val totalGapHeight = (segmentCount - 1) * segmentGap.toPx()
+            val segmentHeight = (canvasHeight - totalGapHeight) / segmentCount
+            
+            // Draw background segments (LEDs off)
+            for (i in 0 until segmentCount) {
+                val y = canvasHeight - (i + 1) * (segmentHeight + segmentGap.toPx()) + segmentGap.toPx()
+                drawRoundRect(
+                    color = Color.DarkGray.copy(alpha = 0.3f),
+                    topLeft = Offset(0f, y),
+                    size = Size(canvasWidth, segmentHeight),
+                    cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
+                )
+            }
+
+            // Draw active segments (LEDs on)
+            val activeSegments = ((animatedDb / 100f) * segmentCount).toInt()
+            for (i in 0 until activeSegments.coerceAtMost(segmentCount)) {
+                val y = canvasHeight - (i + 1) * (segmentHeight + segmentGap.toPx()) + segmentGap.toPx()
+                val segmentColor = when {
+                    i > (0.85f * segmentCount).toInt() -> Color.Red
+                    i > (0.65f * segmentCount).toInt() -> Color.Yellow
+                    else -> Color.Green
+                }
+                
+                drawRoundRect(
+                    color = segmentColor,
+                    topLeft = Offset(0f, y),
+                    size = Size(canvasWidth, segmentHeight),
+                    cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
+                )
+            }
+
+            // Draw threshold marker
+            val thresholdY = canvasHeight - (threshold / 100f) * canvasHeight
+            drawLine(
+                color = Color.White,
+                start = Offset(-8.dp.toPx(), thresholdY),
+                end = Offset(canvasWidth + 8.dp.toPx(), thresholdY),
+                strokeWidth = 3.dp.toPx()
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, device = "id:tv_1080p")
+@Composable
+fun MonitorScreenPreview() {
+    ShumenTheme {
+        MonitorScreen()
+    }
+}

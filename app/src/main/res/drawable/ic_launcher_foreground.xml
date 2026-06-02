@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Microphone Symbol -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,32c-4.42,0 -8,3.58 -8,8v12c0,4.42 3.58,8 8,8s8,-3.58 8,-8v-12c0,-4.42 -3.58,-8 -8,-8z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M64,52c0,5.52 -4.48,10 -10,10s-10,-4.48 -10,-10h-2c0,6.22 4.75,11.33 11,11.9v4.1h2v-4.1c6.25,-0.57 11,-5.68 11,-11.9h-2z" />
+
+    <!-- Energetic Sound Waves -->
+    <!-- Left Waves -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M34,44a2,2 0 0 0 -2,2v8a2,2 0 0 0 4,0v-8a2,2 0 0 0 -2,-2z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M28,40a2,2 0 0 0 -2,2v16a2,2 0 0 0 4,0v-16a2,2 0 0 0 -2,-2z" />
+
+    <!-- Right Waves -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M74,44a2,2 0 0 1 2,2v8a2,2 0 0 1 -4,0v-8a2,2 0 0 1 2,-2z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M80,40a2,2 0 0 1 2,2v16a2,2 0 0 1 -4,0v-16a2,2 0 0 1 2,-2z" />
+
+</vector>
