@@ -124,6 +124,22 @@ fun MonitorScreen(
                             )
                         }
 
+                        Text(
+                            text = when {
+                                currentDb < 40 -> "SILENT"
+                                currentDb < 55 -> "QUIET"
+                                currentDb < 75 -> "MODERATE"
+                                currentDb < 90 -> "LOUD"
+                                else -> "EXTREME"
+                            },
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 2.sp
+                            ),
+                            color = alertColor.copy(alpha = 0.8f),
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+
                         AnimatedVisibility(
                             visible = currentDb > threshold || isAlarmActive,
                             enter = fadeIn() + expandVertically(),

@@ -31,6 +31,9 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
     val alarmDuration: StateFlow<Double> = repository.alarmDurationFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 3.0)
 
+    val alarmEnabled: StateFlow<Boolean> = repository.alarmEnabledFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     private val _isQuietModeActive = MutableStateFlow(false)
     val isQuietModeActive: StateFlow<Boolean> = _isQuietModeActive.asStateFlow()
 
@@ -82,25 +85,30 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
             val totalDurationMs = (alarmDuration.value * 1000).toLong()
             val startTime = System.currentTimeMillis()
             
-            // 3. Play sound (after monitoring is confirmed stopped)
-            // Layering multiple dissonant tones for a "Super Alarm" industrial siren effect
-            var toggle = false
-            while (System.currentTimeMillis() - startTime < totalDurationMs && _isAlarmActive.value) {
-                val remaining = totalDurationMs - (System.currentTimeMillis() - startTime)
-                if (remaining > 0) {
-                    val toneA = if (toggle) ToneGenerator.TONE_CDMA_EMERGENCY_RINGBACK else ToneGenerator.TONE_SUP_ERROR
-                    val toneB = if (toggle) ToneGenerator.TONE_DTMF_D else ToneGenerator.TONE_CDMA_HIGH_L
-                    
-                    toneGenerator1?.startTone(toneA, remaining.toInt())
-                    toneGenerator2?.startTone(toneB, remaining.toInt())
+            // 3. Play sound (after monitoring is confirmed stopped) if enabled
+            if (alarmEnabled.value) {
+                // Layering multiple dissonant tones for a "Super Alarm" industrial siren effect
+                var toggle = false
+                while (System.currentTimeMillis() - startTime < totalDurationMs && _isAlarmActive.value) {
+                    val remaining = totalDurationMs - (System.currentTimeMillis() - startTime)
+                    if (remaining > 0) {
+                        val toneA = if (toggle) ToneGenerator.TONE_CDMA_EMERGENCY_RINGBACK else ToneGenerator.TONE_SUP_ERROR
+                        val toneB = if (toggle) ToneGenerator.TONE_DTMF_D else ToneGenerator.TONE_CDMA_HIGH_L
+                        
+                        toneGenerator1?.startTone(toneA, remaining.toInt())
+                        toneGenerator2?.startTone(toneB, remaining.toInt())
+                    }
+                    toggle = !toggle
+                    delay(1000)
                 }
-                toggle = !toggle
-                delay(1000)
+                
+                // 4. Clean up sound
+                toneGenerator1?.stopTone()
+                toneGenerator2?.stopTone()
+            } else {
+                // If audio alarm is disabled, just wait for the visual alarm duration
+                delay(totalDurationMs)
             }
-            
-            // 4. Clean up sound
-            toneGenerator1?.stopTone()
-            toneGenerator2?.stopTone()
             
             // 5. Short "Cool Down" delay to let any echo/residual sound clear
             delay(500)
@@ -139,6 +147,12 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
     fun setAlarmDuration(value: Double) {
         viewModelScope.launch {
             repository.saveAlarmDuration(value)
+        }
+    }
+
+    fun setAlarmEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            repository.saveAlarmEnabled(enabled)
         }
     }
 

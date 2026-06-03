@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -28,6 +29,7 @@ fun SettingsScreen(
     val threshold by viewModel.threshold.collectAsStateWithLifecycle()
     val sensitivity by viewModel.sensitivity.collectAsStateWithLifecycle()
     val alarmDuration by viewModel.alarmDuration.collectAsStateWithLifecycle()
+    val alarmEnabled by viewModel.alarmEnabled.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
 
     Scaffold(
@@ -108,6 +110,40 @@ fun SettingsScreen(
                         inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
                     )
                 )
+            }
+
+            // Audible Alarm Toggle - TV Optimized
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Audible Alarm",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "Play a loud siren when the alert level is exceeded.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    var isSwitchFocused by remember { mutableStateOf(false) }
+                    Switch(
+                        checked = alarmEnabled,
+                        onCheckedChange = { viewModel.setAlarmEnabled(it) },
+                        modifier = Modifier
+                            .onFocusChanged { isSwitchFocused = it.isFocused }
+                            .padding(start = 16.dp),
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = if (isSwitchFocused) Color.White else MaterialTheme.colorScheme.onPrimary,
+                            checkedTrackColor = if (isSwitchFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer
+                        )
+                    )
+                }
             }
 
             // Alarm Duration Setting - TV Optimized
