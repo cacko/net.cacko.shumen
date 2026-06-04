@@ -1,6 +1,7 @@
 package net.cacko.shumen.ui.noise
 
 import android.app.Application
+import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.media.ToneGenerator
@@ -99,7 +100,12 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
                         mediaPlayer?.release()
                         mediaPlayer = MediaPlayer().apply {
                             setDataSource(getApplication(), Uri.parse(uriStr))
-                            setAudioStreamType(AudioManager.STREAM_ALARM)
+                            setAudioAttributes(
+                                AudioAttributes.Builder()
+                                    .setUsage(AudioAttributes.USAGE_ALARM)
+                                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                                    .build()
+                            )
                             setVolume(currentVolFloat, currentVolFloat)
                             isLooping = true
                             prepare()
@@ -109,8 +115,9 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
                         mediaPlayer?.stop()
                     } catch (e: Exception) {
                         e.printStackTrace()
-                        // Fallback to tone generator if URI fails
-                        playSuperAlarm(totalDurationMs, currentVolInt)
+                        // No automatic fallback to siren if a specific sound was selected.
+                        // We wait for the duration to maintain visual consistency.
+                        delay(totalDurationMs)
                     }
                 } else {
                     playSuperAlarm(totalDurationMs, currentVolInt)

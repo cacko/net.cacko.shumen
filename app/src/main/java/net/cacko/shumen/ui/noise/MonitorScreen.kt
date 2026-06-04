@@ -78,95 +78,64 @@ fun MonitorScreen(
                     .background(alertColor.copy(alpha = animatedAlpha))
             )
 
-            Row(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 64.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Left Half: Meter
-                Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    LinearDbMeter(
-                        db = if (isAlarmActive) 100f else currentDb.toFloat(),
-                        threshold = threshold.toFloat(),
-                        modifier = Modifier
-                            .width(120.dp)
-                            .fillMaxHeight(0.7f)
-                    )
-                }
-
-                // Right Half: Info
-                Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
+            BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp, vertical = 32.dp)) {
+                val isVertical = maxHeight > maxWidth
+                
+                if (isVertical) {
                     Column(
+                        modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Row(verticalAlignment = Alignment.Bottom) {
-                            Text(
-                                text = "${currentDb.toInt()}",
-                                style = MaterialTheme.typography.displayLarge.copy(
-                                    fontWeight = FontWeight.Black,
-                                    fontSize = 120.sp
-                                ),
-                                color = alertColor,
-                                modifier = Modifier.width(200.dp),
-                                textAlign = TextAlign.End
-                            )
-                            Text(
-                                text = "dB",
-                                style = MaterialTheme.typography.headlineLarge,
-                                modifier = Modifier.padding(bottom = 24.dp, start = 8.dp),
-                                color = alertColor.copy(alpha = 0.7f)
+                        // Top: Meter
+                        Box(
+                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            LinearDbMeter(
+                                db = if (isAlarmActive) 100f else currentDb.toFloat(),
+                                threshold = threshold.toFloat(),
+                                modifier = Modifier
+                                    .width(100.dp)
+                                    .fillMaxHeight(0.8f)
                             )
                         }
 
-                        Text(
-                            text = when {
-                                currentDb < 40 -> "SILENT"
-                                currentDb < 55 -> "QUIET"
-                                currentDb < 75 -> "MODERATE"
-                                currentDb < 90 -> "LOUD"
-                                else -> "EXTREME"
-                            },
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 2.sp
-                            ),
-                            color = alertColor.copy(alpha = 0.8f),
-                            modifier = Modifier.padding(top = 8.dp)
-                        )
+                        Spacer(modifier = Modifier.height(32.dp))
 
-                        AnimatedVisibility(
-                            visible = currentDb > threshold || isAlarmActive,
-                            enter = fadeIn() + expandVertically(),
-                            exit = fadeOut() + shrinkVertically()
+                        // Bottom: Info
+                        Box(
+                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Surface(
-                                color = MaterialTheme.colorScheme.errorContainer,
-                                shape = RoundedCornerShape(16.dp),
-                                modifier = Modifier.padding(top = 16.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Rounded.VolumeOff,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onErrorContainer
-                                    )
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Text(
-                                        text = if (isAlarmActive) "ALARM ACTIVE!" else "NOISE LIMIT EXCEEDED",
-                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onErrorContainer
-                                    )
-                                }
-                            }
+                            MonitorInfo(currentDb, alertColor, threshold, isAlarmActive)
+                        }
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Left Half: Meter
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            LinearDbMeter(
+                                db = if (isAlarmActive) 100f else currentDb.toFloat(),
+                                threshold = threshold.toFloat(),
+                                modifier = Modifier
+                                    .width(120.dp)
+                                    .fillMaxHeight(0.7f)
+                            )
+                        }
+
+                        // Right Half: Info
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            MonitorInfo(currentDb, alertColor, threshold, isAlarmActive)
                         }
                     }
                 }
@@ -280,6 +249,83 @@ fun MonitorScreen(
 }
 
 @Composable
+fun MonitorInfo(
+    currentDb: Double,
+    alertColor: Color,
+    threshold: Double,
+    isAlarmActive: Boolean
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                text = "${currentDb.toInt()}",
+                style = MaterialTheme.typography.displayLarge.copy(
+                    fontWeight = FontWeight.Black,
+                    fontSize = 120.sp
+                ),
+                color = alertColor,
+                modifier = Modifier.width(200.dp),
+                textAlign = TextAlign.End
+            )
+            Text(
+                text = "dB",
+                style = MaterialTheme.typography.headlineLarge,
+                modifier = Modifier.padding(bottom = 24.dp, start = 8.dp),
+                color = alertColor.copy(alpha = 0.7f)
+            )
+        }
+
+        Text(
+            text = when {
+                currentDb < 40 -> "SILENT"
+                currentDb < 55 -> "QUIET"
+                currentDb < 75 -> "MODERATE"
+                currentDb < 90 -> "LOUD"
+                else -> "EXTREME"
+            },
+            style = MaterialTheme.typography.headlineMedium.copy(
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 2.sp
+            ),
+            color = alertColor.copy(alpha = 0.8f),
+            modifier = Modifier.padding(top = 8.dp)
+        )
+
+        AnimatedVisibility(
+            visible = currentDb > threshold || isAlarmActive,
+            enter = fadeIn() + expandVertically(),
+            exit = fadeOut() + shrinkVertically()
+        ) {
+            Surface(
+                color = MaterialTheme.colorScheme.errorContainer,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.padding(top = 16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.VolumeOff,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = if (isAlarmActive) "ALARM ACTIVE!" else "NOISE LIMIT EXCEEDED",
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun LinearDbMeter(
     db: Float,
     threshold: Float,
@@ -347,6 +393,14 @@ fun LinearDbMeter(
 @Preview(showBackground = true, device = "id:tv_1080p")
 @Composable
 fun MonitorScreenPreview() {
+    ShumenTheme {
+        MonitorScreen()
+    }
+}
+
+@Preview(showBackground = true, device = "spec:width=411dp,height=891dp")
+@Composable
+fun MonitorScreenVerticalPreview() {
     ShumenTheme {
         MonitorScreen()
     }

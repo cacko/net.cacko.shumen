@@ -2,6 +2,12 @@
 
 All notable changes to the Shumen app will be documented in this file.
 
+## [1.9] - 2024-05-31
+
+### Fixed
+- **Alarm Audio Integrity**: Ensured that *only* the selected alert sound is played. Removed the automatic industrial siren fallback when a custom sound is selected but fails, preventing unwanted mixed audio.
+- **Persistent Custom Sounds**: Switched to the `OpenDocument` API and implemented `takePersistableUriPermission`. This ensures that your custom audio files remain accessible to the app even after your TV restarts.
+
 ## [1.8] - 2024-05-30
 
 ### Added

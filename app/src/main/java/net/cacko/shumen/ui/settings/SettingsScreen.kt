@@ -18,11 +18,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import net.cacko.shumen.ui.noise.NoiseViewModel
+import net.cacko.shumen.ui.theme.ShumenTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,6 +34,7 @@ fun SettingsScreen(
     viewModel: NoiseViewModel = viewModel(),
     onBack: () -> Unit = {}
 ) {
+    val context = LocalContext.current
     val threshold by viewModel.threshold.collectAsStateWithLifecycle()
     val sensitivity by viewModel.sensitivity.collectAsStateWithLifecycle()
     val alarmDuration by viewModel.alarmDuration.collectAsStateWithLifecycle()
@@ -48,9 +53,16 @@ fun SettingsScreen(
     }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         if (uri != null) {
+            // Take persistable URI permission so the file remains accessible after app restart
+            try {
+                val contentResolver = context.contentResolver
+                contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
             viewModel.setAlarmSoundUri(uri.toString())
         }
     }
@@ -67,14 +79,17 @@ fun SettingsScreen(
             )
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 64.dp)
-                .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(48.dp)
-        ) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            val isVertical = maxHeight > maxWidth
+            val horizontalPadding = if (isVertical) 24.dp else 64.dp
+            
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = horizontalPadding)
+                    .verticalScroll(scrollState),
+                verticalArrangement = Arrangement.spacedBy(48.dp)
+            ) {
             Spacer(modifier = Modifier.height(32.dp))
 
             // Alert Level Setting - TV Optimized
@@ -183,7 +198,7 @@ fun SettingsScreen(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                val buttonContent = @Composable {
                     Button(
                         onClick = {
                             val intent = android.content.Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
@@ -192,23 +207,36 @@ fun SettingsScreen(
                                 putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, alarmSoundUri?.let { Uri.parse(it) })
                             }
                             ringtonePickerLauncher.launch(intent)
-                        }
+                        },
+                        modifier = if (isVertical) Modifier.fillMaxWidth() else Modifier
                     ) {
                         Text("System Sounds")
                     }
 
                     Button(
-                        onClick = { filePickerLauncher.launch("audio/*") }
+                        onClick = { filePickerLauncher.launch(arrayOf("audio/*")) },
+                        modifier = if (isVertical) Modifier.fillMaxWidth() else Modifier
                     ) {
                         Text("Custom File")
                     }
 
                     if (alarmSoundUri != null) {
                         TextButton(
-                            onClick = { viewModel.setAlarmSoundUri(null) }
+                            onClick = { viewModel.setAlarmSoundUri(null) },
+                            modifier = if (isVertical) Modifier.fillMaxWidth() else Modifier
                         ) {
-                            Text("Reset to Default")
+                            Text("Reset to Default", textAlign = TextAlign.Center)
                         }
+                    }
+                }
+
+                if (isVertical) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        buttonContent()
+                    }
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        buttonContent()
                     }
                 }
 
@@ -365,5 +393,22 @@ fun SettingsScreen(
             
             Spacer(modifier = Modifier.height(64.dp))
         }
+    }
+}
+}
+
+@Preview(showBackground = true, device = "id:tv_1080p")
+@Composable
+fun SettingsScreenPreview() {
+    ShumenTheme {
+        SettingsScreen()
+    }
+}
+
+@Preview(showBackground = true, device = "spec:width=411dp,height=891dp")
+@Composable
+fun SettingsScreenVerticalPreview() {
+    ShumenTheme {
+        SettingsScreen()
     }
 }
