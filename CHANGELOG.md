@@ -2,6 +2,17 @@
 
 All notable changes to the Shumen app will be documented in this file.
 
+## [1.8] - 2024-05-30
+
+### Added
+- **Configurable Alarm Volume**: Added a new slider in the Settings screen to adjust the loudness of the alarm sound (0-100%).
+
+## [1.7] - 2024-05-29
+
+### Added
+- **Custom Alarm Sounds**: Users can now select system ringtones/alarms or provide their own custom audio files for the noise alert.
+- **Fall-back Protection**: Integrated automatic fallback to the industrial "Super Alarm" if a custom sound fails to load or is unavailable.
+
 ## [1.6] - 2024-05-28
 
 ### Added

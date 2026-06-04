@@ -1,5 +1,9 @@
 package net.cacko.shumen.ui.settings
 
+import android.media.RingtoneManager
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -30,7 +34,26 @@ fun SettingsScreen(
     val sensitivity by viewModel.sensitivity.collectAsStateWithLifecycle()
     val alarmDuration by viewModel.alarmDuration.collectAsStateWithLifecycle()
     val alarmEnabled by viewModel.alarmEnabled.collectAsStateWithLifecycle()
+    val alarmSoundUri by viewModel.alarmSoundUri.collectAsStateWithLifecycle()
+    val alarmVolume by viewModel.alarmVolume.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
+
+    val ringtonePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val uri = result.data?.getParcelableExtra<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
+            viewModel.setAlarmSoundUri(uri?.toString())
+        }
+    }
+
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            viewModel.setAlarmSoundUri(uri.toString())
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -144,6 +167,100 @@ fun SettingsScreen(
                         )
                     )
                 }
+            }
+
+            // Alarm Sound Selection - TV Optimized
+            Column {
+                Text(
+                    text = "Alarm Sound",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = "Current: ${if (alarmSoundUri == null) "Industrial Siren (Default)" else "Custom Selection"}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Button(
+                        onClick = {
+                            val intent = android.content.Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                                putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
+                                putExtra(RingtoneManager.EXTRA_RINGTONE_TITLE, "Select Alarm Sound")
+                                putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, alarmSoundUri?.let { Uri.parse(it) })
+                            }
+                            ringtonePickerLauncher.launch(intent)
+                        }
+                    ) {
+                        Text("System Sounds")
+                    }
+
+                    Button(
+                        onClick = { filePickerLauncher.launch("audio/*") }
+                    ) {
+                        Text("Custom File")
+                    }
+
+                    if (alarmSoundUri != null) {
+                        TextButton(
+                            onClick = { viewModel.setAlarmSoundUri(null) }
+                        ) {
+                            Text("Reset to Default")
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Alarm Volume Setting
+                Text(
+                    text = "Alarm Volume: ${(alarmVolume * 100).toInt()}%",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                var isVolSliderFocused by remember { mutableStateOf(false) }
+                var volSliderValue by remember(alarmVolume) { mutableStateOf(alarmVolume.toFloat()) }
+
+                Slider(
+                    value = volSliderValue,
+                    onValueChange = {
+                        volSliderValue = it
+                        viewModel.setAlarmVolume(it.toDouble())
+                    },
+                    valueRange = 0f..1f,
+                    steps = 10,
+                    modifier = Modifier
+                        .onFocusChanged { isVolSliderFocused = it.isFocused }
+                        .onKeyEvent { event ->
+                            if (event.type == KeyEventType.KeyDown) {
+                                when (event.key) {
+                                    Key.DirectionLeft -> {
+                                        val newValue = (volSliderValue - 0.1f).coerceAtLeast(0f)
+                                        volSliderValue = newValue
+                                        viewModel.setAlarmVolume(newValue.toDouble())
+                                        true
+                                    }
+                                    Key.DirectionRight -> {
+                                        val newValue = (volSliderValue + 0.1f).coerceAtMost(1f)
+                                        volSliderValue = newValue
+                                        viewModel.setAlarmVolume(newValue.toDouble())
+                                        true
+                                    }
+                                    else -> false
+                                }
+                            } else {
+                                false
+                            }
+                        }
+                        .focusable(),
+                    colors = SliderDefaults.colors(
+                        thumbColor = if (isVolSliderFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                )
             }
 
             // Alarm Duration Setting - TV Optimized
