@@ -37,7 +37,7 @@ android {
     }
     signingConfigs {
         create("release") {
-            storeFile = file("/Users/jago/keystore")
+            storeFile = file("../keystore")
             storePassword = "mente123"
             keyAlias = "apps"
             keyPassword = "mente123"

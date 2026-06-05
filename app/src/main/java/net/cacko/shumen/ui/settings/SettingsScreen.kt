@@ -43,6 +43,13 @@ fun SettingsScreen(
     val alarmVolume by viewModel.alarmVolume.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
 
+    DisposableEffect(viewModel) {
+        viewModel.setInSettings(true)
+        onDispose {
+            viewModel.setInSettings(false)
+        }
+    }
+
     val ringtonePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->

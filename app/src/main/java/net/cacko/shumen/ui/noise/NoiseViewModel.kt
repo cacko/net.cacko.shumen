@@ -50,14 +50,24 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
     val isAlarmActive: StateFlow<Boolean> = _isAlarmActive.asStateFlow()
 
     private var monitorJob: Job? = null
+    private var alarmJob: Job? = null
     private var quietModeStartTime: Long = 0
     private var toneGenerator1: ToneGenerator? = null
     private var toneGenerator2: ToneGenerator? = null
     private var mediaPlayer: MediaPlayer? = null
     private var lastUsedVolume: Int = -1
+    private var isInSettings: Boolean = false
 
     init {
         // We will initialize tone generators with current volume when needed
+    }
+
+    fun setInSettings(inSettings: Boolean) {
+        isInSettings = inSettings
+        if (inSettings) {
+            // Silence any active alarm immediately when entering settings
+            stopAlarm()
+        }
     }
 
     fun startMonitoring() {
@@ -66,7 +76,7 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
         monitorJob = viewModelScope.launch {
             _isMonitoring.value = true
             audioAnalyzer.startMonitoring().collect { db ->
-                if (!_isAlarmActive.value) {
+                if (!_isAlarmActive.value && !isInSettings) {
                     val adjustedDb = db * sensitivity.value
                     _currentDb.value = adjustedDb
                     checkQuietMode(adjustedDb)
@@ -80,7 +90,9 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun triggerAlarm() {
-        viewModelScope.launch {
+        if (isInSettings) return
+        
+        alarmJob = viewModelScope.launch {
             // 1. Mark alarm as active and STOP monitoring IMMEDIATELY
             _isAlarmActive.value = true
             stopMonitoring()
@@ -141,6 +153,16 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
             _isAlarmActive.value = false
             startMonitoring()
         }
+    }
+
+    private fun stopAlarm() {
+        alarmJob?.cancel()
+        toneGenerator1?.stopTone()
+        toneGenerator2?.stopTone()
+        mediaPlayer?.stop()
+        mediaPlayer?.release()
+        mediaPlayer = null
+        _isAlarmActive.value = false
     }
 
     private suspend fun playSuperAlarm(totalDurationMs: Long, volume: Int) {

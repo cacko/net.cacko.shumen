@@ -46,8 +46,11 @@ fun MonitorScreen(
     val isQuietModeActive by viewModel.isQuietModeActive.collectAsStateWithLifecycle()
     val isAlarmActive by viewModel.isAlarmActive.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
+    DisposableEffect(viewModel) {
         viewModel.startMonitoring()
+        onDispose {
+            viewModel.stopMonitoring()
+        }
     }
 
     val alertColor by animateColorAsState(
