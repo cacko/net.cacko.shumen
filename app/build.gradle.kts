@@ -13,8 +13,8 @@ android {
         applicationId = "net.cacko.shumen"
         minSdk = 30
         targetSdk = 37
-        versionCode = 10
-        versionName = "1.9"
+        versionCode = 17
+        versionName = "1.16"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

@@ -93,12 +93,11 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
         if (isInSettings) return
         
         alarmJob = viewModelScope.launch {
-            // 1. Mark alarm as active and STOP monitoring IMMEDIATELY
+            // 1. Mark alarm as active and PAUSE monitoring IMMEDIATELY
+            // We use a manual cancel here instead of stopMonitoring() to keep the dB value
             _isAlarmActive.value = true
-            stopMonitoring()
-            
-            // 2. Reset the displayed dB to 0 to reflect that we aren't measuring during alarm
-            _currentDb.value = 0.0
+            monitorJob?.cancel()
+            _isMonitoring.value = false
             
             val totalDurationMs = (alarmDuration.value * 1000).toLong()
             val currentVolInt = (alarmVolume.value * 100).toInt().coerceIn(0, 100)

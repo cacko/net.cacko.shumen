@@ -2,6 +2,42 @@
 
 All notable changes to the Shumen app will be documented in this file.
 
+## [1.16] - 2024-06-07
+
+### Changed
+- **Enhanced Gauge Thickness**: Increased the stroke width of all cyber-gauge components (tracks, glow layers, and needle) to provide a more robust and premium visual presence on large TV screens.
+
+## [1.15] - 2024-06-06
+
+### Added
+- **Futuristic Cyber-Gauge**: Completely redesigned the dB meter with a modern "Cyberpunk" aesthetic. Features include neon glow effects, floating digital needles, sweep-gradient progress tracks, and a sleek minimalist center hub.
+
+## [1.14] - 2024-06-05
+
+### Fixed
+- **Vertical Layout Optimization**: Reduced the excessive vertical gap between the gauge meter and decibel info on portrait/vertical displays, resulting in a more compact and centered layout.
+
+## [1.13] - 2024-06-04
+
+### Added
+- **SpeedView Gauge Meter**: Replaced the linear indicator with a sophisticated circular speedometer-style gauge. Features include colored performance zones (Green, Yellow, Red), precision tick marks (major and minor), and a reactive red needle for a classic dashboard aesthetic.
+
+## [1.12] - 2024-06-03
+
+### Fixed
+- **Responsive Text Sizing**: Implemented dynamic font and icon scaling for the Alarm Overlay and Monitor Screen to ensure everything fits perfectly on smaller screens and tablets.
+
+## [1.11] - 2024-06-02
+
+### Changed
+- **Alarm Data Visibility**: The decibel value that triggered an alarm now remains visible on the screen during the alert, providing immediate context for why the siren was activated.
+
+## [1.10] - 2024-06-01
+
+### Changed
+- **Sensitivity Slider**: Replaced the fixed sensitivity chips with a high-precision slider allowing adjustments in **0.1x increments** (0.1x - 3.0x).
+- **Improved TV Controls**: The new sensitivity slider features full D-pad support for granular remote-driven calibration.
+
 ## [1.9] - 2024-05-31
 
 ### Fixed

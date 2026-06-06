@@ -2,12 +2,12 @@ package net.cacko.shumen.ui.settings
 
 import android.media.RingtoneManager
 import android.net.Uri
+import java.util.Locale
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -355,38 +355,61 @@ fun SettingsScreen(
                 )
             }
 
-            // Sensitivity Setting - TV Optimized Chips
+            // Sensitivity Setting - TV Optimized Slider
             Column {
                 Text(
-                    text = "Microphone Sensitivity",
+                    text = "Microphone Sensitivity: ${String.format(Locale.US, "%.1f", sensitivity)}x",
                     style = MaterialTheme.typography.headlineSmall,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "Increase if the app isn't picking up quiet noises, or decrease if it's too sensitive.",
+                    text = "Increase if the app isn't picking up quiet noises, or decrease if it's too sensitive. Use LEFT/RIGHT on your remote to adjust.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(modifier = Modifier.height(24.dp))
-                
-                Row(
-                    modifier = Modifier.selectableGroup(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    listOf(0.5, 1.0, 1.5, 2.0).forEach { value ->
-                        var isChipFocused by remember { mutableStateOf(false) }
-                        FilterChip(
-                            selected = sensitivity == value,
-                            onClick = { viewModel.setSensitivity(value) },
-                            label = { Text("${value}x") },
-                            modifier = Modifier.onFocusChanged { isChipFocused = it.isFocused },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = if (isChipFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer,
-                                containerColor = if (isChipFocused) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surface
-                            )
-                        )
-                    }
-                }
+
+                var isSensSliderFocused by remember { mutableStateOf(false) }
+                var sensSliderValue by remember(sensitivity) { mutableStateOf(sensitivity.toFloat()) }
+
+                Slider(
+                    value = sensSliderValue,
+                    onValueChange = {
+                        sensSliderValue = it
+                        viewModel.setSensitivity(it.toDouble())
+                    },
+                    valueRange = 0.1f..3.0f,
+                    steps = 28,
+                    modifier = Modifier
+                        .onFocusChanged { isSensSliderFocused = it.isFocused }
+                        .onKeyEvent { event ->
+                            if (event.type == KeyEventType.KeyDown) {
+                                when (event.key) {
+                                    Key.DirectionLeft -> {
+                                        val newValue = (sensSliderValue - 0.1f).coerceAtLeast(0.1f)
+                                        sensSliderValue = newValue
+                                        viewModel.setSensitivity(newValue.toDouble())
+                                        true
+                                    }
+                                    Key.DirectionRight -> {
+                                        val newValue = (sensSliderValue + 0.1f).coerceAtMost(3.0f)
+                                        sensSliderValue = newValue
+                                        viewModel.setSensitivity(newValue.toDouble())
+                                        true
+                                    }
+                                    else -> false
+                                }
+                            } else {
+                                false
+                            }
+                        }
+                        .focusable(),
+                    colors = SliderDefaults.colors(
+                        thumbColor = if (isSensSliderFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                )
             }
             
             Spacer(modifier = Modifier.height(48.dp))
