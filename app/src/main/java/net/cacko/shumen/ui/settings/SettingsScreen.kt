@@ -412,16 +412,27 @@ fun SettingsScreen(
                 )
             }
             
-            Spacer(modifier = Modifier.height(48.dp))
-            
-            Text(
-                text = "Changes are saved automatically.",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
-            
-            Spacer(modifier = Modifier.height(64.dp))
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                val versionName = try {
+                    context.packageManager.getPackageInfo(context.packageName, 0).versionName
+                } catch (e: Exception) {
+                    "1.16"
+                }
+                
+                Text(
+                    text = "Shumen",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                )
+                Text(
+                    text = "Version $versionName",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                )
+            }
         }
     }
 }
