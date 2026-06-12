@@ -22,6 +22,7 @@ class SettingsRepository(private val context: Context) {
         private val ALARM_ENABLED_KEY = booleanPreferencesKey("alarm_enabled")
         private val ALARM_SOUND_URI_KEY = stringPreferencesKey("alarm_sound_uri")
         private val ALARM_VOLUME_KEY = doublePreferencesKey("alarm_volume")
+        private val CLOCK_ONLY_KEY = booleanPreferencesKey("clock_only_mode")
     }
 
     val thresholdFlow: Flow<Double> = context.dataStore.data
@@ -52,6 +53,11 @@ class SettingsRepository(private val context: Context) {
     val alarmVolumeFlow: Flow<Double> = context.dataStore.data
         .map { preferences ->
             preferences[ALARM_VOLUME_KEY] ?: 1.0
+        }
+
+    val clockOnlyModeFlow: Flow<Boolean> = context.dataStore.data
+        .map { preferences ->
+            preferences[CLOCK_ONLY_KEY] ?: false
         }
 
     suspend fun saveThreshold(threshold: Double) {
@@ -91,6 +97,12 @@ class SettingsRepository(private val context: Context) {
     suspend fun saveAlarmVolume(volume: Double) {
         context.dataStore.edit { preferences ->
             preferences[ALARM_VOLUME_KEY] = volume
+        }
+    }
+
+    suspend fun saveClockOnlyMode(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[CLOCK_ONLY_KEY] = enabled
         }
     }
 }

@@ -2,6 +2,11 @@
 
 All notable changes to the Shumen app will be documented in this file.
 
+## [1.17] - 2024-06-08
+
+### Fixed
+- **Startup Settings Loading**: Optimized the way user preferences are loaded from persistent storage. Settings are now fetched eagerly when the app starts, ensuring that monitoring begins with the correct alert levels and sensitivity without any initial delay.
+
 ## [1.16] - 2024-06-07
 
 ### Changed

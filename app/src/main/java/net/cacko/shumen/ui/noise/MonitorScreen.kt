@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -34,6 +35,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.time.format.TextStyle
+import java.util.Locale
+import kotlinx.coroutines.delay
 import net.cacko.shumen.ui.theme.ShumenTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -46,6 +53,7 @@ fun MonitorScreen(
     val threshold by viewModel.threshold.collectAsStateWithLifecycle()
     val isQuietModeActive by viewModel.isQuietModeActive.collectAsStateWithLifecycle()
     val isAlarmActive by viewModel.isAlarmActive.collectAsStateWithLifecycle()
+    val clockOnlyMode by viewModel.clockOnlyMode.collectAsStateWithLifecycle()
 
     DisposableEffect(viewModel) {
         viewModel.startMonitoring()
@@ -85,7 +93,11 @@ fun MonitorScreen(
             BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp, vertical = 32.dp)) {
                 val isVertical = maxHeight > maxWidth
                 
-                if (isVertical) {
+                if (clockOnlyMode) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        DigitalClock()
+                    }
+                } else if (isVertical) {
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -502,6 +514,106 @@ fun GaugeDbMeter(
                 center = center,
                 style = Stroke(width = 3.dp.toPx())
             )
+        }
+    }
+}
+
+@Composable
+fun DigitalClock(modifier: Modifier = Modifier) {
+    var time by remember { mutableStateOf(LocalTime.now()) }
+    var date by remember { mutableStateOf(LocalDate.now()) }
+    var colonVisible by remember { mutableStateOf(true) }
+    
+    LaunchedEffect(Unit) {
+        while (true) {
+            time = LocalTime.now()
+            date = LocalDate.now()
+            // Quick blink logic: Visible for 850ms, Dimmed for 150ms
+            colonVisible = true
+            delay(850)
+            colonVisible = false
+            delay(150)
+        }
+    }
+    
+    val hourFormatter = DateTimeFormatter.ofPattern("HH")
+    val minuteFormatter = DateTimeFormatter.ofPattern("mm")
+    val dateFormatter = DateTimeFormatter.ofPattern("EEEE, MMMM d", Locale.getDefault())
+    
+    BoxWithConstraints(
+        modifier = modifier.fillMaxSize().padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        val isVertical = maxHeight > maxWidth
+        val clockScale = if (isVertical) {
+            (maxWidth / 300.dp).coerceAtMost(1.5f)
+        } else {
+            (maxHeight / 300.dp).coerceAtMost(2.0f)
+        }
+
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            // Day of Week and Date
+            Text(
+                text = date.format(dateFormatter).uppercase(),
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.Medium,
+                    letterSpacing = 2.sp * clockScale,
+                    fontSize = (if (isVertical) 18.sp else 22.sp) * clockScale,
+                    fontFamily = FontFamily.SansSerif
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                modifier = Modifier.padding(bottom = 12.dp * clockScale)
+            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                // Hours - Bold & Primary
+                Text(
+                    text = time.format(hourFormatter),
+                    style = MaterialTheme.typography.displayLarge.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = (if (isVertical) 110.sp else 160.sp) * clockScale,
+                        letterSpacing = (-4).sp * clockScale,
+                        fontFamily = FontFamily.SansSerif
+                    ),
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                // Colon - Animated "Flicker"
+                val colonAlpha by animateFloatAsState(
+                    targetValue = if (colonVisible) 1f else 0.1f,
+                    animationSpec = tween(durationMillis = 100),
+                    label = "ColonBlink"
+                )
+                
+                Text(
+                    text = ":",
+                    style = MaterialTheme.typography.displayLarge.copy(
+                        fontWeight = FontWeight.ExtraLight,
+                        fontSize = (if (isVertical) 110.sp else 160.sp) * clockScale,
+                        fontFamily = FontFamily.SansSerif
+                    ),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = colonAlpha),
+                    modifier = Modifier.padding(horizontal = 2.dp * clockScale)
+                )
+
+                // Minutes - Thin & Primary (Same color as hours)
+                Text(
+                    text = time.format(minuteFormatter),
+                    style = MaterialTheme.typography.displayLarge.copy(
+                        fontWeight = FontWeight.ExtraLight,
+                        fontSize = (if (isVertical) 110.sp else 160.sp) * clockScale,
+                        letterSpacing = (-4).sp * clockScale,
+                        fontFamily = FontFamily.SansSerif
+                    ),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }

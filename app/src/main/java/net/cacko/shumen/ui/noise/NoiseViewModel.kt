@@ -26,22 +26,25 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
     val isMonitoring: StateFlow<Boolean> = _isMonitoring.asStateFlow()
 
     val threshold: StateFlow<Double> = repository.thresholdFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 70.0)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 70.0)
 
     val sensitivity: StateFlow<Double> = repository.sensitivityFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.0)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 1.0)
 
     val alarmDuration: StateFlow<Double> = repository.alarmDurationFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 3.0)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 3.0)
 
     val alarmEnabled: StateFlow<Boolean> = repository.alarmEnabledFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
     val alarmSoundUri: StateFlow<String?> = repository.alarmSoundUriFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     val alarmVolume: StateFlow<Double> = repository.alarmVolumeFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.0)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 1.0)
+
+    val clockOnlyMode: StateFlow<Boolean> = repository.clockOnlyModeFlow
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val _isQuietModeActive = MutableStateFlow(false)
     val isQuietModeActive: StateFlow<Boolean> = _isQuietModeActive.asStateFlow()
@@ -241,6 +244,12 @@ class NoiseViewModel(application: Application) : AndroidViewModel(application) {
     fun setAlarmVolume(volume: Double) {
         viewModelScope.launch {
             repository.saveAlarmVolume(volume)
+        }
+    }
+
+    fun setClockOnlyMode(enabled: Boolean) {
+        viewModelScope.launch {
+            repository.saveClockOnlyMode(enabled)
         }
     }
 

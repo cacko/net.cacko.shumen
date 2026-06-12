@@ -41,6 +41,7 @@ fun SettingsScreen(
     val alarmEnabled by viewModel.alarmEnabled.collectAsStateWithLifecycle()
     val alarmSoundUri by viewModel.alarmSoundUri.collectAsStateWithLifecycle()
     val alarmVolume by viewModel.alarmVolume.collectAsStateWithLifecycle()
+    val clockOnlyMode by viewModel.clockOnlyMode.collectAsStateWithLifecycle()
     val scrollState = rememberScrollState()
 
     DisposableEffect(viewModel) {
@@ -186,6 +187,40 @@ fun SettingsScreen(
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = if (isSwitchFocused) Color.White else MaterialTheme.colorScheme.onPrimary,
                             checkedTrackColor = if (isSwitchFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer
+                        )
+                    )
+                }
+            }
+
+            // Clock Only Mode Toggle - TV Optimized
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Clock Only Mode",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "Show only the current time on the main screen. Measurements and alarms still work in the background.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    var isClockSwitchFocused by remember { mutableStateOf(false) }
+                    Switch(
+                        checked = clockOnlyMode,
+                        onCheckedChange = { viewModel.setClockOnlyMode(it) },
+                        modifier = Modifier
+                            .onFocusChanged { isClockSwitchFocused = it.isFocused }
+                            .padding(start = 16.dp),
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = if (isClockSwitchFocused) Color.White else MaterialTheme.colorScheme.onPrimary,
+                            checkedTrackColor = if (isClockSwitchFocused) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.primaryContainer
                         )
                     )
                 }
